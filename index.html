@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelionės anketa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef3f1;
+    --surface: #ffffff;
+    --ink: #13231f;
+    --muted: #5b6e68;
+    --line: #d5e0dc;
+    --accent: #0d7a78;
+    --accent-ink: #ffffff;
+    --accent-soft: #dff1ee;
+    --sand: #f1c56b;
+    --error: #b3261e;
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    font-family: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px;
+    line-height: 1.5;
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 620px;
+    background: var(--surface);
+    border-radius: 28px;
+    box-shadow: 0 1px 0 var(--line), 0 24px 60px -30px rgba(19, 35, 31, .35);
+    overflow: hidden;
+  }
+
+  /* ---------- Progress ---------- */
+  .progress { padding: 24px 28px 0; }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: .875rem;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .progress-meta strong { color: var(--ink); font-weight: 700; }
+
+  .bars { display: flex; gap: 6px; }
+  .bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 99px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .bar::after {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--accent);
+    border-radius: inherit;
+    transition: width .35s ease;
+  }
+  .bar.done::after { width: 100%; }
+  .bar.current::after { width: 100%; background: var(--sand); }
+
+  /* ---------- Steps ---------- */
+  form { padding: 8px 28px 28px; }
+
+  fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .step { display: none; }
+  .step.active { display: block; animation: swap .3s ease; }
+
+  @keyframes swap {
+    from { opacity: 0; transform: translateX(14px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  legend {
+    padding: 0;
+    margin: 20px 0 4px;
+    font-size: clamp(1.5rem, 5vw, 1.9rem);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1.2;
+  }
+  legend:focus { outline: none; }
+
+  .hint { margin: 0 0 20px; color: var(--muted); font-size: .95rem; }
+
+  /* ---------- Options ---------- */
+  .options { display: grid; gap: 10px; }
+  .options.cards { grid-template-columns: repeat(2, 1fr); }
+
+  .option { position: relative; }
+
+  .option input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .option label {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    height: 100%;
+    padding: 16px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    transition: border-color .15s, background-color .15s, transform .1s;
+  }
+
+  .cards .option label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 18px 16px;
+    min-height: 132px;
+  }
+
+  .icon { font-size: 1.75rem; line-height: 1; }
+
+  .text { display: block; }
+  .label { display: block; font-weight: 700; font-size: 1rem; }
+  .desc  { display: block; font-size: .85rem; color: var(--muted); }
+
+  .option:hover label { border-color: #9fc4bf; }
+  .option input:active + label { transform: scale(.985); }
+
+  .option input:checked + label {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .option input:focus-visible + label {
+    outline: 3px solid var(--sand);
+    outline-offset: 2px;
+  }
+
+  /* check mark */
+  .option label::after {
+    content: "";
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    background: transparent center / 12px no-repeat;
+    transition: all .15s;
+  }
+  .option input:checked + label::after {
+    border-color: var(--accent);
+    background-color: var(--accent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.4 2.4 4.6-5' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  .list .option label { padding-right: 48px; }
+  .list .option label::after { top: 50%; transform: translateY(-50%); }
+
+  /* ---------- Summary ---------- */
+  .summary {
+    margin-top: 22px;
+    padding: 16px;
+    border-radius: var(--radius);
+    background: var(--bg);
+    font-size: .9rem;
+  }
+  .summary h3 { margin: 0 0 8px; font-size: .95rem; }
+  .summary dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; }
+  .summary dt { color: var(--muted); }
+  .summary dd { margin: 0; font-weight: 700; }
+
+  /* ---------- Actions ---------- */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  button {
+    font: inherit;
+    font-weight: 700;
+    border: 0;
+    border-radius: 14px;
+    padding: 15px 22px;
+    cursor: pointer;
+    transition: background-color .15s, opacity .15s, transform .1s;
+  }
+  button:active:not(:disabled) { transform: scale(.98); }
+  button:focus-visible { outline: 3px solid var(--sand); outline-offset: 2px; }
+
+  .btn-primary { flex: 1; background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover:not(:disabled) { background: #0a6563; }
+  .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+
+  .btn-ghost { background: transparent; color: var(--ink); border: 2px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--ink); }
+
+  [hidden] { display: none !important; }
+
+  .error {
+    margin: 14px 0 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fbe9e7;
+    color: var(--error);
+    font-size: .9rem;
+  }
+
+  /* ---------- Success ---------- */
+  .done-screen { padding: 48px 28px 40px; text-align: center; }
+  .done-screen .badge {
+    width: 72px; height: 72px; margin: 0 auto 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: grid; place-items: center;
+  }
+  .done-screen h2 { margin: 0 0 8px; font-size: 1.6rem; letter-spacing: -.02em; }
+  .done-screen p { margin: 0 0 24px; color: var(--muted); }
+  .done-screen button { width: 100%; max-width: 280px; }
+  .done-actions { display: grid; gap: 10px; justify-items: center; }
+
+  .btn-link {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 8px;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .btn-link:hover { text-decoration: underline; }
+
+  /* ---------- Statistika ---------- */
+  .stats-screen { padding: 28px 28px 32px; }
+  .stats-screen h2 {
+    margin: 4px 0 6px;
+    font-size: clamp(1.45rem, 5vw, 1.8rem);
+    letter-spacing: -.02em;
+    line-height: 1.2;
+  }
+  .stats-lead { margin: 0 0 8px; color: var(--muted); }
+
+  .stat-block { margin-top: 18px; }
+  .stat-block h3, .history-title {
+    margin: 0 0 10px;
+    font-size: .95rem;
+  }
+  .meter { margin-bottom: 10px; }
+  .meter-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: .85rem;
+  }
+  .meter-top strong { font-weight: 700; }
+  .meter-top span { color: var(--muted); white-space: nowrap; }
+  .track {
+    margin-top: 5px;
+    height: 8px;
+    border-radius: 99px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .track i {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: var(--accent);
+  }
+
+  .history { display: grid; gap: 10px; }
+  .history article {
+    padding: 14px 16px;
+    border-radius: var(--radius);
+    background: var(--bg);
+  }
+  .history time {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: .8rem;
+    font-weight: 700;
+  }
+  .history dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3px 14px;
+    font-size: .88rem;
+  }
+  .history dt { color: var(--muted); }
+  .history dd { margin: 0; font-weight: 700; }
+
+  @media (max-width: 480px) {
+    body { padding: 0; align-items: stretch; }
+    .shell { border-radius: 0; box-shadow: none; display: flex; flex-direction: column; }
+    .progress { padding: 20px 18px 0; }
+    form { padding: 8px 18px 24px; flex: 1; display: flex; flex-direction: column; }
+    .actions { margin-top: auto; padding-top: 24px; }
+    .cards .option label { min-height: 120px; padding: 14px 12px; }
+    .options.cards { gap: 8px; }
+    .stats-screen { padding: 20px 18px 24px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::after { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<main class="shell">
+  <div class="progress" id="progress" aria-live="polite">
+    <div class="progress-meta">
+      <span>Žingsnis <strong id="stepNow">1</strong> iš <span id="stepTotal">4</span></span>
+      <span id="stepName"></span>
+    </div>
+    <div class="bars" id="bars"></div>
+  </div>
+
+  <form id="wizard" novalidate>
+    <div id="steps"></div>
+
+    <div class="summary" id="summary" hidden>
+      <h3>Tavo pasirinkimai</h3>
+      <dl id="summaryList"></dl>
+    </div>
+
+    <p class="error" id="error" role="alert" hidden></p>
+
+    <div class="actions">
+      <button type="button" class="btn-ghost" id="backBtn">Atgal</button>
+      <button type="button" class="btn-primary" id="nextBtn" disabled>Toliau</button>
+      <button type="submit" class="btn-primary" id="submitBtn" hidden disabled>Siųsti</button>
+    </div>
+    <button type="button" class="btn-link" id="openStatsBtn">Bendra statistika ir istorija</button>
+  </form>
+
+  <section class="done-screen" id="done" hidden>
+    <div class="badge" aria-hidden="true">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    </div>
+    <h2>Ačiū, atsakymai išsiųsti</h2>
+    <p>Tavo pasirinkimai sėkmingai pasiekė serverį.</p>
+    <div class="done-actions">
+      <button type="button" class="btn-primary" id="doneStatsBtn">Bendra statistika</button>
+      <button type="button" class="btn-ghost" id="restartBtn">Pildyti iš naujo</button>
+    </div>
+  </section>
+
+  <section class="stats-screen" id="stats" hidden>
+    <h2>Bendri užpildymai</h2>
+    <p class="stats-lead" id="statsLead">Kraunama…</p>
+    <div id="statsBody"></div>
+    <div class="history" id="history"></div>
+    <p class="error" id="statsError" role="alert" hidden></p>
+    <div class="actions">
+      <button type="button" class="btn-ghost" id="statsBackBtn">Atgal</button>
+      <button type="button" class="btn-primary" id="statsReloadBtn">Atnaujinti</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  // ============================================================
+  //  NUSTATYMAI: įklijuok savo n8n Webhook URL (POST)
+  //  Testavimui: .../webhook-test/...   Produkcijai: .../webhook/...
+  // ============================================================
+  const WEBHOOK_URL = "https://gabijabr.app.n8n.cloud/webhook/a48761dd-ee40-4106-a037-c0b1bd2fece5";
+
+  // GET webhook: Google Sheets „AI forma“ eilutės.
+  // n8n → Respond to Webhook → All incoming items.
+  // Produkcijai naudok /webhook/ , ne /webhook-test/ .
+  const STATS_URL = "https://gabijabr.app.n8n.cloud/webhook/db265988-3339-4ca6-9de5-ec37d9c62ee4";
+
+  // ---------- Žingsnių duomenys ----------
+  // key = stulpelio pavadinimas Google Sheets lentelėje
+  const STEPS = [
+    {
+      key: "kelione",
+      name: "Kelionės tipas",
+      title: "Kokia kelionė tau artimiausia?",
+      hint: "Pasirink vieną variantą.",
+      layout: "cards",
+      options: [
+        { value: "Miestai ir kultūra", icon: "🏛️", desc: "Muziejai, architektūra, maistas" },
+        { value: "Gamta ir žygiai",    icon: "🥾", desc: "Miškai, kalnai, tylos paieška" },
+        { value: "Jūra ir poilsis",    icon: "🏖️", desc: "Paplūdimys, saulė, nieko neveikti" },
+        { value: "Nuotykiai ir sportas", icon: "🧗", desc: "Aktyvi veikla ir adrenalinas" }
+      ]
+    },
+    {
+      key: "trukme",
+      name: "Trukmė",
+      title: "Kiek laiko keliauji?",
+      hint: "Apytikslė kelionės trukmė.",
+      layout: "list",
+      options: [
+        { value: "Savaitgalis", desc: "2–3 dienos" },
+        { value: "Savaitė",     desc: "5–7 dienos" },
+        { value: "Dvi savaitės", desc: "10–14 dienų" },
+        { value: "Ilgiau nei mėnuo", desc: "Lėta kelionė" }
+      ]
+    },
+    {
+      key: "biudzetas",
+      name: "Biudžetas",
+      title: "Koks tavo biudžetas?",
+      hint: "Vienam asmeniui, be skrydžių.",
+      layout: "cards",
+      options: [
+        { value: "Iki 300 €",    icon: "🎒", desc: "Taupi kelionė" },
+        { value: "300–800 €",    icon: "🚆", desc: "Vidutinis biudžetas" },
+        { value: "800–1500 €",   icon: "🏨", desc: "Patogi kelionė" },
+        { value: "Daugiau nei 1500 €", icon: "✨", desc: "Be apribojimų" }
+      ]
+    },
+    {
+      key: "kompanija",
+      name: "Kompanija",
+      title: "Su kuo keliauji?",
+      hint: "Paskutinis žingsnis, tada gali siųsti.",
+      layout: "list",
+      options: [
+        { value: "Vienas",        desc: "Savo tempas, savo taisyklės" },
+        { value: "Su partneriu",  desc: "Dviese" },
+        { value: "Su draugais",   desc: "Maža kompanija" },
+        { value: "Su šeima",      desc: "Su vaikais ar tėvais" }
+      ]
+    }
+  ];
+
+  // ---------- Būsena ----------
+  const answers = {};
+  let current = 0;
+
+  const $ = (id) => document.getElementById(id);
+  const stepsEl = $("steps");
+  const barsEl = $("bars");
+  const backBtn = $("backBtn");
+  const nextBtn = $("nextBtn");
+  const submitBtn = $("submitBtn");
+  const errorEl = $("error");
+
+  // ---------- Atvaizdavimas ----------
+  function build() {
+    stepsEl.innerHTML = "";
+    barsEl.innerHTML = "";
+    $("stepTotal").textContent = STEPS.length;
+
+    STEPS.forEach((step, i) => {
+      const fs = document.createElement("fieldset");
+      fs.className = "step";
+      fs.dataset.index = i;
+
+      const legend = document.createElement("legend");
+      legend.textContent = step.title;
+      legend.tabIndex = -1;
+      fs.appendChild(legend);
+
+      const hint = document.createElement("p");
+      hint.className = "hint";
+      hint.textContent = step.hint;
+      fs.appendChild(hint);
+
+      const wrap = document.createElement("div");
+      wrap.className = "options " + step.layout;
+
+      step.options.forEach((opt, j) => {
+        const id = `${step.key}-${j}`;
+        const row = document.createElement("div");
+        row.className = "option";
+
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = step.key;
+        input.id = id;
+        input.value = opt.value;
+        input.addEventListener("change", () => {
+          answers[step.key] = opt.value;
+          hideError();
+          updateUI();
+        });
+
+        const label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerHTML =
+          (opt.icon ? `<span class="icon" aria-hidden="true">${opt.icon}</span>` : "") +
+          `<span class="text"><span class="label">${opt.value}</span>` +
+          (opt.desc ? `<span class="desc">${opt.desc}</span>` : "") +
+          `</span>`;
+
+        row.append(input, label);
+        wrap.appendChild(row);
+      });
+
+      fs.appendChild(wrap);
+      stepsEl.appendChild(fs);
+
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      barsEl.appendChild(bar);
+    });
+  }
+
+  function renderSummary() {
+    const list = $("summaryList");
+    list.innerHTML = "";
+    STEPS.forEach((s) => {
+      if (!answers[s.key]) return;
+      const dt = document.createElement("dt");
+      dt.textContent = s.name;
+      const dd = document.createElement("dd");
+      dd.textContent = answers[s.key];
+      list.append(dt, dd);
+    });
+  }
+
+  function updateUI() {
+    const last = current === STEPS.length - 1;
+    const hasAnswer = Boolean(answers[STEPS[current].key]);
+
+    stepsEl.querySelectorAll(".step").forEach((el, i) =>
+      el.classList.toggle("active", i === current));
+
+    barsEl.querySelectorAll(".bar").forEach((el, i) => {
+      el.classList.toggle("done", i < current);
+      el.classList.toggle("current", i === current);
+    });
+
+    $("stepNow").textContent = current + 1;
+    $("stepName").textContent = STEPS[current].name;
+
+    backBtn.hidden = current === 0;
+    nextBtn.hidden = last;
+    submitBtn.hidden = !last;
+    nextBtn.disabled = !hasAnswer;
+    submitBtn.disabled = !hasAnswer;
+
+    $("summary").hidden = !last;
+    if (last) renderSummary();
+  }
+
+  function goTo(index) {
+    current = index;
+    updateUI();
+    const legend = stepsEl.querySelector(".step.active legend");
+    if (legend) legend.focus({ preventScroll: false });
+  }
+
+  function showError(msg) { errorEl.textContent = msg; errorEl.hidden = false; }
+  function hideError() { errorEl.hidden = true; }
+
+  // ---------- Mygtukai ----------
+  nextBtn.addEventListener("click", () => {
+    if (!answers[STEPS[current].key]) return showError("Pasirink vieną variantą, kad galėtum tęsti.");
+    goTo(current + 1);
+  });
+
+  backBtn.addEventListener("click", () => {
+    hideError();
+    if (current > 0) goTo(current - 1);
+  });
+
+  // ---------- Siuntimas į n8n ----------
+  $("wizard").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideError();
+
+    if (STEPS.some((s) => !answers[s.key])) {
+      return showError("Atsakyk į visus klausimus prieš siųsdamas.");
+    }
+    if (WEBHOOK_URL.includes("TAVO-N8N")) {
+      return showError("Nenurodytas webhook adresas. Pakeisk WEBHOOK_URL kode savo n8n URL.");
+    }
+
+    const payload = {
+      ...answers,
+      pateikta: new Date().toISOString(),
+      saltinis: "step-form"
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Siunčiama…";
+
+    try {
+      const res = await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+
+      $("wizard").hidden = true;
+      $("progress").hidden = true;
+      $("done").hidden = false;
+    } catch (err) {
+      console.error(err);
+      showError("Nepavyko išsiųsti. Patikrink interneto ryšį ir webhook adresą, tada bandyk dar kartą.");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Siųsti";
+    }
+  });
+
+  // ---------- Iš naujo ----------
+  $("restartBtn").addEventListener("click", () => {
+    Object.keys(answers).forEach((k) => delete answers[k]);
+    $("wizard").reset();
+    submitBtn.textContent = "Siųsti";
+    $("done").hidden = true;
+    $("stats").hidden = true;
+    $("wizard").hidden = false;
+    $("progress").hidden = false;
+    goTo(0);
+  });
+
+  // ---------- Statistika iš Google Sheets ----------
+  const FIELD_ALIASES = {
+    kelione: ["kelione", "kelionė", "keliones tipas", "kelionės tipas"],
+    trukme: ["trukme", "trukmė"],
+    biudzetas: ["biudzetas", "biudžetas"],
+    kompanija: ["kompanija"],
+    pateikta: ["pateikta", "data", "timestamp"]
+  };
+
+  function cell(row, key) {
+    if (row[key] != null && String(row[key]).trim() !== "") return String(row[key]);
+    const wanted = FIELD_ALIASES[key] || [key];
+    const found = Object.entries(row).find(([name, value]) =>
+      wanted.includes(String(name).trim().toLowerCase()) && value != null && String(value).trim() !== "");
+    return found ? String(found[1]) : "";
+  }
+
+  function rowsFromPayload(data) {
+    if (typeof data === "string") return { rows: [], note: data };
+    let items = data;
+    if (data && !Array.isArray(data)) {
+      if (Array.isArray(data.data)) items = data.data;
+      else if (Array.isArray(data.items)) items = data.items;
+      else items = [data];
+    }
+    if (!Array.isArray(items)) return { rows: [], note: "" };
+    const rows = items.map((item) => {
+      if (item && typeof item === "object" && item.json && typeof item.json === "object") return item.json;
+      return item;
+    }).filter((row) => row && typeof row === "object" && !Array.isArray(row));
+    return { rows, note: "" };
+  }
+
+  function formatWhen(value) {
+    const date = new Date(value);
+    if (!value || Number.isNaN(date.getTime())) return value || "Be datos";
+    return new Intl.DateTimeFormat("lt-LT", { dateStyle: "medium", timeStyle: "short" }).format(date);
+  }
+
+  function renderStats(rows) {
+    const body = $("statsBody");
+    const history = $("history");
+    body.replaceChildren();
+    history.replaceChildren();
+    $("statsLead").textContent = rows.length
+      ? `Iš viso užpildymų: ${rows.length}`
+      : "Google Sheets lape „AI forma“ dar nėra užpildymų.";
+
+    STEPS.forEach((step) => {
+      const counts = new Map(step.options.map((opt) => [opt.value, 0]));
+      rows.forEach((row) => {
+        const value = cell(row, step.key);
+        if (!value) return;
+        counts.set(value, (counts.get(value) || 0) + 1);
+      });
+      const answered = [...counts.values()].reduce((sum, count) => sum + count, 0);
+      const block = document.createElement("section");
+      block.className = "stat-block";
+      const heading = document.createElement("h3");
+      heading.textContent = step.name;
+      block.appendChild(heading);
+
+      counts.forEach((count, value) => {
+        const pct = answered ? Math.round((count / answered) * 100) : 0;
+        const meter = document.createElement("div");
+        meter.className = "meter";
+        const top = document.createElement("div");
+        top.className = "meter-top";
+        const label = document.createElement("strong");
+        label.textContent = value;
+        const meta = document.createElement("span");
+        meta.textContent = `${count} · ${pct}%`;
+        top.append(label, meta);
+        const track = document.createElement("div");
+        track.className = "track";
+        const fill = document.createElement("i");
+        fill.style.width = pct + "%";
+        track.appendChild(fill);
+        meter.append(top, track);
+        block.appendChild(meter);
+      });
+      body.appendChild(block);
+    });
+
+    const title = document.createElement("h3");
+    title.className = "history-title";
+    title.textContent = "Istorija";
+    history.appendChild(title);
+
+    const sorted = [...rows].sort((a, b) => {
+      const aTime = Date.parse(cell(a, "pateikta")) || 0;
+      const bTime = Date.parse(cell(b, "pateikta")) || 0;
+      return bTime - aTime;
+    });
+
+    if (!sorted.length) {
+      const empty = document.createElement("p");
+      empty.className = "stats-lead";
+      empty.textContent = "Istorija atsiras, kai lape bus bent viena eilutė.";
+      history.appendChild(empty);
+      return;
+    }
+
+    sorted.forEach((row) => {
+      const article = document.createElement("article");
+      const time = document.createElement("time");
+      time.textContent = formatWhen(cell(row, "pateikta"));
+      const list = document.createElement("dl");
+      STEPS.forEach((step) => {
+        const dt = document.createElement("dt");
+        dt.textContent = step.name;
+        const dd = document.createElement("dd");
+        dd.textContent = cell(row, step.key) || "—";
+        list.append(dt, dd);
+      });
+      article.append(time, list);
+      history.appendChild(article);
+    });
+  }
+
+  function showStatsError(message) {
+    const error = $("statsError");
+    error.textContent = message;
+    error.hidden = false;
+    $("statsLead").textContent = "Statistikos nepavyko užkrauti.";
+  }
+
+  async function loadStats() {
+    $("statsBody").replaceChildren();
+    $("history").replaceChildren();
+    $("statsError").hidden = true;
+    $("statsLead").textContent = "Kraunama iš Google Sheets…";
+
+    if (!STATS_URL) {
+      showStatsError("Trūksta GET webhook adreso. n8n Webhook node nukopijuok Production URL ir įrašyk jį į STATS_URL faile index.html.");
+      return;
+    }
+
+    try {
+      const res = await fetch(STATS_URL);
+      const text = await res.text();
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const trimmed = text.trim();
+      if (!trimmed) {
+        showStatsError("Webhook atsakė tuščiu turiniu. Workflow įjungtas, bet Respond to Webhook negrąžina eilučių. Nustatyk Respond With į All incoming items ir paskelbk workflow iš naujo.");
+        return;
+      }
+      if (trimmed === "tested ok") {
+        showStatsError("Webhook grąžino tekstą „tested ok“, ne lentelės eilutes. n8n node „Respond to Webhook“ nustatyk į All incoming items ir prijunk jį po Google Sheets.");
+        return;
+      }
+      let data;
+      try {
+        data = JSON.parse(trimmed);
+      } catch {
+        showStatsError("Webhook grąžino ne JSON. Postman lange turi matytis eilučių sąrašas iš Google Sheets.");
+        return;
+      }
+      const { rows, note } = rowsFromPayload(data);
+      if (note && note.trim() === "tested ok") {
+        showStatsError("Webhook grąžino tekstą „tested ok“, ne lentelės eilutes. n8n node „Respond to Webhook“ nustatyk į All incoming items ir prijunk jį po Google Sheets.");
+        return;
+      }
+      renderStats(rows);
+    } catch (err) {
+      console.error(err);
+      showStatsError("Nepavyko nuskaityti lapo. Patikrink, ar GET webhook veikia naršyklėje ir ar n8n leidžia užklausas iš šios svetainės.");
+    }
+  }
+
+  let statsReturn = "wizard";
+
+  function openStats(from) {
+    statsReturn = from;
+    $("wizard").hidden = true;
+    $("done").hidden = true;
+    $("progress").hidden = true;
+    $("stats").hidden = false;
+    loadStats();
+  }
+
+  function closeStats() {
+    $("stats").hidden = true;
+    const backToDone = statsReturn === "done";
+    $("done").hidden = !backToDone;
+    $("wizard").hidden = backToDone;
+    $("progress").hidden = backToDone;
+  }
+
+  $("openStatsBtn").addEventListener("click", () => { location.href = "statistika.html"; });
+  $("doneStatsBtn").addEventListener("click", () => { location.href = "statistika.html"; });
+  $("statsBackBtn").addEventListener("click", closeStats);
+  $("statsReloadBtn").addEventListener("click", loadStats);
+
+  build();
+  updateUI();
+</script>
+</body>
+</html>

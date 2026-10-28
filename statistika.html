@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelionių statistika</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef3f1; --surface: #fff; --ink: #13231f; --muted: #5b6e68;
+    --line: #d5e0dc; --accent: #0d7a78; --error: #b3261e; --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100dvh; padding: 20px 16px;
+    font-family: "Manrope", system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5;
+  }
+  main { max-width: 620px; margin: 0 auto; background: var(--surface); border-radius: 28px; padding: 28px; }
+  h1 { margin: 8px 0 6px; font-size: 1.7rem; letter-spacing: -.02em; }
+  a { color: var(--accent); font-weight: 700; }
+  .lead { margin: 0 0 8px; color: var(--muted); }
+  h2 { margin: 22px 0 10px; font-size: .95rem; }
+  .row { display: flex; justify-content: space-between; gap: 12px; font-size: .85rem; }
+  .row span { color: var(--muted); }
+  .track { height: 8px; margin: 5px 0 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .track i { display: block; height: 100%; background: var(--accent); }
+  article { margin-top: 10px; padding: 14px 16px; border-radius: var(--radius); background: var(--bg); }
+  time { display: block; margin-bottom: 6px; color: var(--muted); font-size: .8rem; font-weight: 700; }
+  dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: .88rem; }
+  dt { color: var(--muted); } dd { margin: 0; font-weight: 700; }
+  .error { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #fbe9e7; color: var(--error); }
+  button { font: inherit; font-weight: 700; margin-top: 18px; border: 0; border-radius: 14px; padding: 14px 18px; background: var(--accent); color: #fff; cursor: pointer; }
+</style>
+</head>
+<body>
+<main>
+  <a href="index.html">← Anketa</a>
+  <h1>Bendri užpildymai</h1>
+  <p class="lead" id="lead">Kraunama…</p>
+  <div id="stats"></div>
+  <div id="history"></div>
+  <p class="error" id="error" hidden></p>
+  <button type="button" id="reload">Atnaujinti</button>
+</main>
+<script>
+  const STATS_URL = "https://gabijabr.app.n8n.cloud/webhook/db265988-3339-4ca6-9de5-ec37d9c62ee4";
+  const GROUPS = [
+    { key: "kelione", name: "Kelionės tipas", options: ["Miestai ir kultūra", "Gamta ir žygiai", "Jūra ir poilsis", "Nuotykiai ir sportas"] },
+    { key: "trukme", name: "Trukmė", options: ["Savaitgalis", "Savaitė", "Dvi savaitės", "Ilgiau nei mėnuo"] },
+    { key: "biudzetas", name: "Biudžetas", options: ["Iki 300 €", "300–800 €", "800–1500 €", "Daugiau nei 1500 €"] },
+    { key: "kompanija", name: "Kompanija", options: ["Vienas", "Su partneriu", "Su draugais", "Su šeima"] }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+
+  function rowsFrom(data) {
+    const items = Array.isArray(data) ? data : (data && (data.data || data.items)) || [];
+    return items.map((item) => (item && item.json) || item).filter((row) => row && typeof row === "object");
+  }
+
+  function when(value) {
+    const date = new Date(value);
+    return value && !Number.isNaN(date.getTime())
+      ? new Intl.DateTimeFormat("lt-LT", { dateStyle: "medium", timeStyle: "short" }).format(date)
+      : (value || "Be datos");
+  }
+
+  function render(rows) {
+    $("lead").textContent = rows.length ? `Iš viso užpildymų: ${rows.length}` : "Lape dar nėra užpildymų.";
+    const stats = $("stats");
+    const history = $("history");
+    stats.replaceChildren();
+    history.replaceChildren();
+
+    GROUPS.forEach((group) => {
+      const counts = new Map(group.options.map((option) => [option, 0]));
+      rows.forEach((row) => {
+        const value = row[group.key];
+        if (value) counts.set(value, (counts.get(value) || 0) + 1);
+      });
+      const total = [...counts.values()].reduce((sum, n) => sum + n, 0);
+      const block = document.createElement("section");
+      const heading = document.createElement("h2");
+      heading.textContent = group.name;
+      block.appendChild(heading);
+      counts.forEach((count, value) => {
+        const pct = total ? Math.round((count / total) * 100) : 0;
+        const row = document.createElement("div");
+        row.className = "row";
+        const name = document.createElement("strong");
+        name.textContent = value;
+        const meta = document.createElement("span");
+        meta.textContent = count + " · " + pct + "%";
+        const track = document.createElement("div");
+        track.className = "track";
+        const fill = document.createElement("i");
+        fill.style.width = pct + "%";
+        track.appendChild(fill);
+        row.append(name, meta);
+        block.append(row, track);
+      });
+      stats.appendChild(block);
+    });
+
+    const title = document.createElement("h2");
+    title.textContent = "Istorija";
+    history.appendChild(title);
+    [...rows].sort((a, b) => (Date.parse(b.pateikta) || 0) - (Date.parse(a.pateikta) || 0)).forEach((row) => {
+      const card = document.createElement("article");
+      const time = document.createElement("time");
+      time.textContent = when(row.pateikta);
+      const list = document.createElement("dl");
+      GROUPS.forEach((group) => {
+        const dt = document.createElement("dt");
+        dt.textContent = group.name;
+        const dd = document.createElement("dd");
+        dd.textContent = row[group.key] || "—";
+        list.append(dt, dd);
+      });
+      card.append(time, list);
+      history.appendChild(card);
+    });
+  }
+
+  function fail(message) {
+    $("lead").textContent = "Statistikos nepavyko užkrauti.";
+    const error = $("error");
+    error.hidden = false;
+    error.textContent = message;
+  }
+
+  async function load() {
+    $("error").hidden = true;
+    $("lead").textContent = "Kraunama iš Google Sheets…";
+    $("stats").replaceChildren();
+    $("history").replaceChildren();
+    try {
+      const res = await fetch(STATS_URL);
+      const text = await res.text();
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      if (!text.trim()) {
+        fail("Webhook atsakė tuščiai. n8n Respond to Webhook turi būti „All incoming items“, tada Publish.");
+        return;
+      }
+      render(rowsFrom(JSON.parse(text)));
+    } catch (err) {
+      console.error(err);
+      fail("Nepavyko nuskaityti duomenų. Patikrink GET webhook.");
+    }
+  }
+
+  $("reload").addEventListener("click", load);
+  load();
+</script>
+</body>
+</html>
